@@ -11,12 +11,8 @@ namespace or_tools
     {
         private readonly PickList[] _pickLists;
         private readonly Container[] _containers;
-        private readonly PickItem[] _pickItems;
-        private readonly long _pickItemsCount;
-        private readonly ContainerItem[] _containerItems;
-        private readonly long _containerItemsCount;
-        private readonly string[] _distinctItemIds;
-        private readonly long _distinctItemIdsCount;
+         private readonly PickItem[] _pickItems;
+         private readonly ContainerItem[] _containerItems;
         private readonly Solver _solver;
         private readonly Objective _objective;
 
@@ -25,16 +21,17 @@ namespace or_tools
             _containers = containers;
             _pickLists = pickLists;
 
-            _pickItems = pickLists.SelectMany(x => x.Items, (pl, item) => new PickItem { PickList = pl, Item = item }).ToArray();
-            _pickItemsCount = _pickItems.Length;
+            _pickItems = pickLists
+                .SelectMany(x => x.Items, (pl, item) => new PickItem { PickList = pl, Item = item })
+                .ToArray();
             
-            _containerItems = containers.SelectMany(x => x.Items, (pl, item) => new ContainerItem { Container = pl, Item = item }).ToArray();
-            _containerItemsCount = _containerItems.Length;
+            _containerItems = containers
+                .SelectMany(x => x.Items, (pl, item) => new ContainerItem { Container = pl, Item = item })
+                .ToArray();
 
-            _distinctItemIds = _pickItems.Select(x => x.Item.ID).Distinct().ToArray();
-            _distinctItemIdsCount = _distinctItemIds.Length;
+            _solver = new Solver(nameof(PickListSolver), 
+                OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING);
 
-            _solver = new Solver(nameof(PickListSolver), OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING);
             _objective = _solver.Objective();
             _objective.SetMinimization();
         }
@@ -62,65 +59,63 @@ namespace or_tools
             };
         }
 
-        private PickListSolverVariable[,] CreateMainVariables()
+        private List<PickListSolverVariable> CreateMainVariables()
         {
-            var variables = new PickListSolverVariable[_pickItemsCount, _containerItemsCount];
-            var i = 0;
+            var variables = new List<PickListSolverVariable>();
             foreach (var pickItem in _pickItems)
             {
-                var j = 0;
                 foreach (var containerItem in _containerItems)
                 {
-                    var isMatch = containerItem.Item.ID == pickItem.Item.ID;
-                    var variable = isMatch
-                        ? _solver.MakeIntVar(0, pickItem.Item.ID == containerItem.Item.ID ? Math.Min(pickItem.Item.Quantity, containerItem.Item.Quantity) : 0, 
-                            $"qty_{pickItem.PickList.ID}_{pickItem.Item.ID}_{containerItem.Container.LPN}_{containerItem.Item.ID}")
-                        : null;
-                    
-                    variables[i, j] = new PickListSolverVariable
+                    if (containerItem.Item.ID == pickItem.Item.ID)
                     {
-                        PickItem = pickItem,
-                        ContainerItem = containerItem,
-                        Variable = variable
-                    };
-                    j++;
+                        variables.Add(new PickListSolverVariable
+                        {
+                            PickItem = pickItem,
+                            ContainerItem = containerItem,
+                            Variable = _solver.MakeIntVar(0, pickItem.Item.ID == containerItem.Item.ID 
+                                    ? Math.Min(pickItem.Item.Quantity, containerItem.Item.Quantity) 
+                                    : 0, 
+                                $"qty_{pickItem.PickList.ID}_{pickItem.Item.ID}_{containerItem.Container.LPN}_{containerItem.Item.ID}")
+                        });
+                    }
                 }
-                i++;
             }
             return variables;
         }
 
-        private void CreatePickListTotalConstraints(PickListSolverVariable[,] variables)
+        private void CreatePickListTotalConstraints(List<PickListSolverVariable> variables)
         {
-            for (var i = 0; i < _pickItemsCount; i++)
+            foreach (var pickItem in _pickItems)
             {
-                var constraint = _solver.MakeConstraint(0.0, variables[i, 0].PickItem.Item.Quantity);
-                for (var j = 0; j < _containerItemsCount; j++)
+                var constraint = _solver.MakeConstraint(0.0, pickItem.Item.Quantity);
+                foreach (var variable in variables.Where(x => x.PickItem == pickItem))
                 {
-                    constraint.SetCoefficient(variables[i,j].Variable, 1);
+                    constraint.SetCoefficient(variable.Variable, 1);
                 }
             }
         }
 
-        private void CreateContainerTotalConstraints(PickListSolverVariable[,] variables)
+        private void CreateContainerTotalConstraints(List<PickListSolverVariable> variables)
         {
-            for (var j = 0; j < _containerItemsCount; j++)
+            foreach (var containerItem in _containerItems)
             {
-                var constraint = _solver.MakeConstraint(0.0, variables[0, j].ContainerItem.Item.Quantity);
-                for (var i = 0; i < _containerItemsCount; i++)
+                var constraint = _solver.MakeConstraint(0.0, containerItem.Item.Quantity);
+                foreach (var variable in variables.Where(x => x.ContainerItem == containerItem))
                 {
-                    constraint.SetCoefficient(variables[i,j].Variable, 1);
+                    constraint.SetCoefficient(variable.Variable, 1);
                 }
             }
         }
 
-        private void CreateInventoryTotalConstraints(PickListSolverVariable[,] variables)
+        private void CreateInventoryTotalConstraints(List<PickListSolverVariable> variables)
         {
-            foreach (var id in _distinctItemIds)
+            foreach (var id in _pickItems.Select(x => x.Item.ID).Distinct().ToArray())
             {
                 var pickListRequestedQty = _pickItems.Where(x => x.Item.ID == id).Sum(x => x.Item.Quantity);
                 var inventoryQty = _containerItems.Where(x => x.Item.ID == id).Sum(x => x.Item.Quantity);
+
                 var constraint = _solver.MakeConstraint(Math.Min(inventoryQty, pickListRequestedQty), double.PositiveInfinity);
+                
                 foreach (var v in variables)
                 {
                     if (v.ContainerItem.Item.ID == id)
@@ -131,7 +126,7 @@ namespace or_tools
             }
         }
 
-        private void CreateUsageVariables(PickListSolverVariable[,] variables)
+        private void CreateUsageVariables(List<PickListSolverVariable> variables)
         {
             for (var i = 0; i < _containers.Length; i++)
             {
@@ -153,7 +148,7 @@ namespace or_tools
             }
         }
 
-        private void ApplyChanges(PickListSolverVariable[,] variables)
+        private void ApplyChanges(List<PickListSolverVariable> variables)
         {
             foreach (var v in variables)
             {
