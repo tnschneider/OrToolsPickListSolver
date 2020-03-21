@@ -39,7 +39,6 @@ namespace OrToolsPickListSolver
             _objective.SetMinimization();
         }
 
-
         public PickListSolverResult Solve()
         {
             var variables = CreateMainVariables();
@@ -52,7 +51,10 @@ namespace OrToolsPickListSolver
 
             var resultStatus = _solver.Solve();
 
-            ApplyChanges(variables);
+            if (resultStatus == ResultStatus.OPTIMAL || resultStatus == ResultStatus.FEASIBLE)
+            {
+                ApplyChanges(variables);
+            }
 
             return new PickListSolverResult
             {
@@ -65,6 +67,7 @@ namespace OrToolsPickListSolver
         private List<PickListSolverVariable> CreateMainVariables()
         {
             var variables = new List<PickListSolverVariable>();
+
             foreach (var pickItem in _pickItems)
             foreach (var containerItem in _containerItems.Where(x => x.Item.ID == pickItem.Item.ID))
             {
@@ -78,6 +81,7 @@ namespace OrToolsPickListSolver
                         $"qty_{pickItem.PickList.ID}_{pickItem.Item.ID}_{containerItem.Container.LPN}_{containerItem.Item.ID}")
                 });
             }
+
             return variables;
         }
 
@@ -86,6 +90,7 @@ namespace OrToolsPickListSolver
             foreach (var pickItem in _pickItems)
             {
                 var constraint = _solver.MakeConstraint(0.0, pickItem.Item.Quantity);
+
                 foreach (var variable in variables.Where(x => x.PickItem == pickItem))
                 {
                     constraint.SetCoefficient(variable.Variable, 1);
@@ -98,6 +103,7 @@ namespace OrToolsPickListSolver
             foreach (var containerItem in _containerItems)
             {
                 var constraint = _solver.MakeConstraint(0.0, containerItem.Item.Quantity);
+                
                 foreach (var variable in variables.Where(x => x.ContainerItem == containerItem))
                 {
                     constraint.SetCoefficient(variable.Variable, 1);
