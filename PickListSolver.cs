@@ -16,7 +16,7 @@ namespace OrToolsPickListSolver
         private readonly Solver _solver;
         private readonly Objective _objective;
 
-        public PickListSolver(PickList[] pickLists, Container[] containers)
+        public PickListSolver(PickList[] pickLists, Container[] containers, long timeLimitSeconds)
         {
             _containers = containers;
             _pickLists = pickLists;
@@ -31,6 +31,8 @@ namespace OrToolsPickListSolver
 
             _solver = new Solver(nameof(PickListSolver), 
                 OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING);
+
+            _solver.SetTimeLimit(timeLimitSeconds * 1000);
 
             _objective = _solver.Objective();
             _objective.SetMinimization();

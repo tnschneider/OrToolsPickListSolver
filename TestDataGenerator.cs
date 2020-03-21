@@ -45,8 +45,6 @@ namespace OrToolsPickListSolver
 
             _containerItemCountRandom = new RandomKumaraswamy(1, options.MaxItemsPerContainer);
             _containerQuantityRandom = new RandomKumaraswamy(1, options.MaxContainerItemQuantity);
-
-            Console.WriteLine(_uniformRandom != null);
         }
 
         public TestDataGeneratorResults Generate()
