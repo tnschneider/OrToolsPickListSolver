@@ -33,6 +33,7 @@ namespace OrToolsPickListSolver
                 OptimizationProblemType.CBC_MIXED_INTEGER_PROGRAMMING);
 
             _solver.SetTimeLimit(timeLimitSeconds * 1000);
+            _solver.SuppressOutput();
 
             _objective = _solver.Objective();
             _objective.SetMinimization();
@@ -65,22 +66,17 @@ namespace OrToolsPickListSolver
         {
             var variables = new List<PickListSolverVariable>();
             foreach (var pickItem in _pickItems)
+            foreach (var containerItem in _containerItems.Where(x => x.Item.ID == pickItem.Item.ID))
             {
-                foreach (var containerItem in _containerItems)
+                variables.Add(new PickListSolverVariable
                 {
-                    if (containerItem.Item.ID == pickItem.Item.ID)
-                    {
-                        variables.Add(new PickListSolverVariable
-                        {
-                            PickItem = pickItem,
-                            ContainerItem = containerItem,
-                            Variable = _solver.MakeIntVar(0, pickItem.Item.ID == containerItem.Item.ID 
-                                    ? Math.Min(pickItem.Item.Quantity, containerItem.Item.Quantity) 
-                                    : 0, 
-                                $"qty_{pickItem.PickList.ID}_{pickItem.Item.ID}_{containerItem.Container.LPN}_{containerItem.Item.ID}")
-                        });
-                    }
-                }
+                    PickItem = pickItem,
+                    ContainerItem = containerItem,
+                    Variable = _solver.MakeIntVar(0, pickItem.Item.ID == containerItem.Item.ID 
+                            ? Math.Min(pickItem.Item.Quantity, containerItem.Item.Quantity) 
+                            : 0, 
+                        $"qty_{pickItem.PickList.ID}_{pickItem.Item.ID}_{containerItem.Container.LPN}_{containerItem.Item.ID}")
+                });
             }
             return variables;
         }
@@ -118,56 +114,48 @@ namespace OrToolsPickListSolver
 
                 var constraint = _solver.MakeConstraint(Math.Min(inventoryQty, pickListRequestedQty), double.PositiveInfinity);
                 
-                foreach (var v in variables)
+                foreach (var v in variables.Where(x => x.ContainerItem.Item.ID == id))
                 {
-                    if (v.ContainerItem.Item.ID == id)
-                    {
-                        constraint.SetCoefficient(v.Variable, 1);
-                    }
+                    constraint.SetCoefficient(v.Variable, 1);
                 }
             }
         }
 
         private void CreateUsageVariables(List<PickListSolverVariable> variables)
         {
-            for (var i = 0; i < _containers.Length; i++)
-            {
-                var lpn = _containers[i].LPN;
+            const int M = 10000000;
 
-                var variable = _solver.MakeBoolVar($"usage_{lpn}");
+            foreach (var container in _containers)
+            {
+                var variable = _solver.MakeBoolVar($"usage_{container.LPN}");
                 _objective.SetCoefficient(variable, 1);
-                var M = 10000000;
+                
                 var constraint = _solver.MakeConstraint(1 - M, 0);
                 constraint.SetCoefficient(variable, -M);
 
-                foreach (var v in variables)
+                foreach (var v in variables.Where(x => x.ContainerItem.Container.LPN == container.LPN))
                 {
-                    if (v.ContainerItem.Container.LPN == lpn && v.Variable != null)
-                    {
-                        constraint.SetCoefficient(v.Variable, 1);
-                    }
+                    constraint.SetCoefficient(v.Variable, 1);
                 }
             }
         }
 
         private void ApplyChanges(List<PickListSolverVariable> variables)
         {
-            foreach (var v in variables)
+            foreach (var v in variables.Where(x => x.Variable.SolutionValue() > 0))
             {
-                if (v.Variable != null && v.Variable.SolutionValue() > 0)
-                {
-                    var val = (long)v.Variable.SolutionValue();
-                    
-                    if (v.PickItem.Item.Orders == null)
-                        v.PickItem.Item.Orders = new List<PickListOrder>();
+                var val = (long)v.Variable.SolutionValue();
+                
+                if (v.PickItem.Item.Orders == null)
+                    v.PickItem.Item.Orders = new List<PickListOrder>();
 
-                    v.PickItem.Item.Orders.Add(new PickListOrder
-                    {
-                        LPN = v.ContainerItem.Container.LPN,
-                        Quantity = val
-                    });
-                    v.ContainerItem.Item.Quantity -= val;
-                }
+                v.PickItem.Item.Orders.Add(new PickListOrder
+                {
+                    LPN = v.ContainerItem.Container.LPN,
+                    Quantity = val
+                });
+
+                v.ContainerItem.Item.Quantity -= val;
             }
         }
     }

@@ -143,14 +143,10 @@ namespace OrToolsPickListSolver
             };
 
             foreach (var wordA in wordsA)
+            foreach (var wordB in wordsB)
+            foreach (var wordC in wordsC)
             {
-                foreach (var wordB in wordsB)
-                {
-                    foreach (var wordC in wordsC)
-                    {
-                        allItems.Add($"{wordA} {wordB} {wordC}");
-                    }
-                }
+                allItems.Add($"{wordA} {wordB} {wordC}");
             }
 
             return allItems.ToArray();

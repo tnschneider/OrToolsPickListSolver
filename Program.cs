@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using OrToolsPickListSolver.Models;
 using static Google.OrTools.LinearSolver.Solver;
 
@@ -9,20 +10,19 @@ namespace OrToolsPickListSolver
     {
         static void Main(string[] args)
         {
-            var pickListQuantities = new short[] { 10 };
-            var containerQuantities = new short[] { 100, 200, 300, 400, 500 };
+            var pickListCounts = new short[] { 5, 10, 25 };
+            var containerCounts = new short[] { 100, 200, 500 };
 
-            foreach (var plq in pickListQuantities)
+            foreach (var plc in pickListCounts)
+            foreach (var cc in containerCounts)
+            for (var i = 0; i < 3; i++)
             {
-                foreach (var cq in containerQuantities)
-                {
-                    var (gotSolution, elapsed) = RunDiagnostic(plq, cq);
-                    Console.WriteLine($"# pick lists: {plq}; # containers: {cq}; got solution: {gotSolution}; elapsed: {elapsed}");
-                }
+                var (solution, pctMatched, elapsed) = RunDiagnostic(plc, cc);
+                Console.WriteLine($"# pick lists: {plc}; # containers: {cc}; solution: {solution}; matched: {pctMatched:0.0}%; elapsed: {elapsed:0.00}s;");
             }
         }
 
-        private static (bool, TimeSpan) RunDiagnostic(short numPickLists, short numContainers)
+        private static (string, double, double) RunDiagnostic(short numPickLists, short numContainers)
         {
             var generator = new TestDataGenerator(new TestDataGeneratorOptions
             {
@@ -32,7 +32,7 @@ namespace OrToolsPickListSolver
                 NumContainers = numContainers,
                 MaxItemsPerContainer = 25,
                 MaxContainerItemQuantity = 1000,
-                TotalItemTypes = 50
+                TotalItemTypes = 100
             });
 
             var testData = generator.Generate();
@@ -43,21 +43,35 @@ namespace OrToolsPickListSolver
 
             PickListSolverResult result = null;
             
-            var retries = 0;
+            var retries = 1;
             do 
             {
-                var solver = new PickListSolver(testData.PickLists, testData.Containers, 30);
+                var solver = new PickListSolver(testData.PickLists, testData.Containers, 10 * retries);
                 result = solver.Solve();
                 retries++;
             } while (result.ResultStatus != ResultStatus.OPTIMAL
                 && result.ResultStatus != ResultStatus.FEASIBLE
-                && retries < 3);
+                && retries <= 3);
 
             sw.Stop();
 
+            var items = result.PickLists.SelectMany(x => x.Items).Select(x => {
+                return new { OrderQuantity = x.Orders?.Sum(y => y.Quantity) ?? 0, Quantity = x.Quantity };
+            });
+            
+            var pctMatched = (1.0 * items.Sum(x => x.OrderQuantity))
+                / (1.0 * items.Sum(x => x.Quantity)) * 100.0;
+
+            var resultStatus = result.ResultStatus == ResultStatus.OPTIMAL
+                ? "Optimal"
+                : (result.ResultStatus == ResultStatus.FEASIBLE
+                    ? "Feasible"
+                    : "None");
+
             return (
-                result.ResultStatus == ResultStatus.OPTIMAL || result.ResultStatus == ResultStatus.FEASIBLE,
-                sw.Elapsed
+                resultStatus,
+                pctMatched,
+                sw.Elapsed.TotalMilliseconds / 1000.0
             );
         }
     }
