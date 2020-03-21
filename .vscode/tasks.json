@@ -5,20 +5,12 @@
             "label": "build",
             "command": "dotnet",
             "type": "process",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            },
             "args": [
                 "build",
-                "${workspaceFolder}/src/OrToolsPickListSolver.csproj",
-                "/property:GenerateFullPaths=true",
-                "/consoleloggerparameters:NoSummary"
-            ],
-            "problemMatcher": "$msCompile"
-        },
-        {
-            "label": "publish",
-            "command": "dotnet",
-            "type": "process",
-            "args": [
-                "publish",
                 "${workspaceFolder}/src/OrToolsPickListSolver.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
@@ -35,6 +27,23 @@
                 "${workspaceFolder}/src/OrToolsPickListSolver.csproj",
                 "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+        },
+        {
+            "label": "test",
+            "command": "dotnet",
+            "type": "process",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "args": [
+                "test",
+                "${workspaceFolder}/test/OrToolsPickListSolver.Tests.csproj",
+                "/property:CollectCoverage=true",
+                "/property:CoverletOutput=${workspaceFolder}/lcov",
+                "/property:CoverletOutputFormat=lcov"
             ],
             "problemMatcher": "$msCompile"
         }
