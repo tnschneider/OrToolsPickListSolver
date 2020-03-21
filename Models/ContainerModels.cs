@@ -6,6 +6,7 @@ namespace OrToolsPickListSolver.Models
     {
         public string LPN { get; set; }
         public List<Item> Items { get; set; }
+        public ContainerType Type { get; set; }
     }
 
     public class Item
@@ -18,5 +19,12 @@ namespace OrToolsPickListSolver.Models
     {
         public Container Container { get; set; }
         public Item Item { get; set; }
+    }
+
+    public enum ContainerType
+    {
+        Unknown,
+        Putaway,
+        Replenishment
     }
 }

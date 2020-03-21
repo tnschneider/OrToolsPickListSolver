@@ -90,10 +90,13 @@ namespace OrToolsPickListSolver
                     };
                 });
 
+                var isReplenishment = _uniformRandom.NextDouble() < _options.ReplenishmentPct;
+
                 var container = new Container
                 {
                     LPN = $"container_{i}",
-                    Items = items.ToList()
+                    Items = items.ToList(),
+                    Type = isReplenishment ? ContainerType.Replenishment : ContainerType.Putaway
                 };
 
                 containers.Add(container);

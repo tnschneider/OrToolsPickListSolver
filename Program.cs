@@ -32,7 +32,8 @@ namespace OrToolsPickListSolver
                 NumContainers = numContainers,
                 MaxItemsPerContainer = 25,
                 MaxContainerItemQuantity = 1000,
-                TotalItemTypes = 100
+                TotalItemTypes = 100,
+                ReplenishmentPct = 0.75
             });
 
             var testData = generator.Generate();

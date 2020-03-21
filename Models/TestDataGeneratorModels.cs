@@ -9,6 +9,7 @@ namespace OrToolsPickListSolver.Models
         public short MaxPickListItemQuantity { get; set; }
         public short MaxContainerItemQuantity { get; set; }
         public short TotalItemTypes { get; set; }
+        public double ReplenishmentPct { get; set; }
     }
 
     public class TestDataGeneratorResults

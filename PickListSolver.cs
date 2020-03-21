@@ -135,7 +135,7 @@ namespace OrToolsPickListSolver
 
                 foreach (var v in variables.Where(x => x.ContainerItem.Container.LPN == container.LPN))
                 {
-                    constraint.SetCoefficient(v.Variable, 1);
+                    constraint.SetCoefficient(v.Variable, container.Type == ContainerType.Replenishment ? 3 : 1);
                 }
             }
         }
