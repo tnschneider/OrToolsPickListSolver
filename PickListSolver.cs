@@ -11,8 +11,8 @@ namespace OrToolsPickListSolver
     {
         private readonly PickList[] _pickLists;
         private readonly Container[] _containers;
-         private readonly PickItem[] _pickItems;
-         private readonly ContainerItem[] _containerItems;
+        private readonly PickItem[] _pickItems;
+        private readonly ContainerItem[] _containerItems;
         private readonly Solver _solver;
         private readonly Objective _objective;
 

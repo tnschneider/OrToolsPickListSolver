@@ -6,23 +6,6 @@ using OrToolsPickListSolver.RandomNumbers;
 
 namespace OrToolsPickListSolver
 {
-    public class TestDataGeneratorOptions
-    {
-        public short NumPickLists { get; set; }
-        public short MaxItemsPerPickList { get; set; }
-        public short NumContainers { get; set; }
-        public short MaxItemsPerContainer { get; set; }
-        public short MaxPickListItemQuantity { get; set; }
-        public short MaxContainerItemQuantity { get; set; }
-        public short TotalItemTypes { get; set; }
-    }
-
-    public class TestDataGeneratorResults
-    {
-        public PickList[] PickLists { get; set; }
-        public Container[] Containers { get; set; }
-    }
-
     public class TestDataGenerator
     {
         private readonly static Random _uniformRandom = new Random();
