@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace or_tools.Models
+namespace OrToolsPickListSolver.Models
 {
     public class PickList
     {

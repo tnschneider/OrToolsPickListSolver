@@ -1,7 +1,7 @@
 using Google.OrTools.LinearSolver;
 using static Google.OrTools.LinearSolver.Solver;
 
-namespace or_tools.Models
+namespace OrToolsPickListSolver.Models
 {
     public class PickListSolverVariable
     {

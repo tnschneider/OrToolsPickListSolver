@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Google.OrTools.LinearSolver;
-using or_tools.Models;
+using OrToolsPickListSolver.Models;
 using static Google.OrTools.LinearSolver.Solver;
 
-namespace or_tools
+namespace OrToolsPickListSolver
 {
     public class PickListSolver
     {
