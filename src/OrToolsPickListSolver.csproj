@@ -9,7 +9,7 @@
 
   <ItemGroup>
     <PackageReference Include="Google.OrTools" Version="7.5.7466" />
-    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.2" />
   </ItemGroup>
 
 </Project>
