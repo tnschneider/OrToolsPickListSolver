@@ -55,6 +55,8 @@ Constrain "usage" variables using the following method:
 
 <https://cs.stackexchange.com/questions/104990/boolean-variable-that-captures-whether-an-inequality-holds>
 
+<https://cs.stackexchange.com/questions/12102/express-boolean-logic-operations-in-zero-one-integer-linear-programming-ilp>
+
 ### Objective
 
 Minimize sum of boolean "usage" variables
